@@ -17,24 +17,27 @@ definition(
 preferences {
     section("Arm/Disarm these cameras") {
 		input "cameras", "capability.imageCapture", multiple: true
-		input "notify", "enum", title: "Notification?", metadata: [values: ["Yes","No"]]
-		input "buttonMode", "enum", title: "Button Function", metadata: [values: ["Enable Alarm", "Disable Alarm"]]
 	}
     
     section("When people arrive/depart") {
     	input "presence", "capability.presenceSensor", title: "Who?", multiple: true
     }
+    
+    section("Options") {
+        input "notify", "bool", title: "Notification?"
+        input "buttonMode", "enum", title: "Button Function", metadata: [values: ["Enable Alarm", "Disable Alarm"]]
+    }
 }
 
 def installed() {
 	subscribe(presence, "presence", presenceAlarm)
-	subscribe(app, toggleAlarm)
+    subscribe(app, toggleAlarm)
 }
 
 def updated() {
 	unsubscribe()
 	subscribe(presence, "presence", presenceAlarm)
-	subscribe(app, toggleAlarm)
+    subscribe(app, toggleAlarm)
 }
 
 def presenceAlarm(evt) {
@@ -46,15 +49,15 @@ def presenceAlarm(evt) {
     else {
     	def nobodyHome = presence.find{it.currentPresence == "present"} == null
         if (nobodyHome) {
-			log.debug "Everyone has left ${location}"
-			cameras?.alarmOn()
-			sendMessage("Foscam alarm enabled")
+        	log.debug "Everyone has left ${location}"
+        	cameras?.alarmOn()
+            sendMessage("Foscam alarm enabled")
         }
     }
 }
 
 def sendMessage(msg) {
-	if (notify == "Yes") {
+	if (notify) {
 		sendPush msg
 	}
 }
