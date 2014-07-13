@@ -18,11 +18,13 @@ preferences {
     section("Arm/Disarm these cameras") {
 		input "cameras", "capability.imageCapture", multiple: true
 	}
-    
     section("When people arrive/depart") {
     	input "presence", "capability.presenceSensor", title: "Who?", multiple: true
     }
-    
+    section("Only between these times...") {
+    	input "startTime", "time", title: "Start Time", required: false
+        input "endTime", "time", title: "End Time", required: false
+    }
     section("Options") {
         input "notify", "bool", title: "Notification?"
         input "buttonMode", "enum", title: "Button Function", metadata: [values: ["Enable Alarm", "Disable Alarm"]]
@@ -30,13 +32,13 @@ preferences {
 }
 
 def installed() {
-	subscribe(presence, "presence", presenceAlarm)
+	subscribe(presence, "presence", checkTime)
     subscribe(app, toggleAlarm)
 }
 
 def updated() {
 	unsubscribe()
-	subscribe(presence, "presence", presenceAlarm)
+	subscribe(presence, "presence", checkTime)
     subscribe(app, toggleAlarm)
 }
 
@@ -70,5 +72,19 @@ def toggleAlarm(evt) {
     else {
         log.debug "Alarms Disabled"
     	cameras?.alarmOff()
+    }
+}
+
+def checkTime(evt) {
+    if(startTime && endTime) {
+        def currentTime = new Date()
+    	def startUTC = timeToday(startTime)
+    	def endUTC = timeToday(endTime)
+	    if((currentTime > startUTC && currentTime < endUTC && startUTC < endUTC) || (currentTime > startUTC && startUTC > endUTC) || (currentTime < startUTC && currentTime < endUTC)) {
+    		presenceAlarm(evt)
+    	}
+    }
+    else {
+    	presenceAlarm(evt)
     }
 }
